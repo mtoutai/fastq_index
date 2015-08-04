@@ -1,13 +1,12 @@
-THIS SOFTWARE IS DISTRIBUTED UNDER
-CC0 1.0 Universal
-Public Domain Dedication
-http://creativecommons.org/publicdomain/zero/1.0/
+THIS SOFTWARE IS DISTRIBUTED UNDER  
+CC0 1.0 Universal  
+Public Domain Dedication  
+<http://creativecommons.org/publicdomain/zero/1.0/>
 
-Developed by:
-TOTAI MITSUYAMA, PhD.
-Biotechnology Research Institute for Drug Discovery
-National Institute of Advanced Industrial Science and Technology (AIST)
-
+Developed by:  
+TOTAI MITSUYAMA, PhD.  
+Biotechnology Research Institute for Drug Discovery  
+National Institute of Advanced Industrial Science and Technology (AIST)  
 
 
 INTRODUCTION
@@ -22,10 +21,10 @@ A typical use case of aligning short reads with FASTQ_INDEX looks like this:
 
 
 This software is a set of following tools:
-- fastq_index         creates an index file for a given FASTQ file
-- fastq_index_cat     writes specified block of a FASTQ file to STDOUT
-- fastq_index_dump    writes contents of an index file to STDOUT (debug purpose)
-- fastq_index_size    writes the number of blocks of an index file to STDOUT
+* fastq_index         creates an index file for a given FASTQ file
+* fastq_index_cat     writes specified block of a FASTQ file to STDOUT
+* fastq_index_dump    writes contents of an index file to STDOUT (debug purpose)
+* fastq_index_size    writes the number of blocks of an index file to STDOUT
 
 
 INSTALLATION
