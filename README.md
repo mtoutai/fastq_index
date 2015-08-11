@@ -17,7 +17,7 @@ A typical use case of aligning short reads with FASTQ_INDEX looks like this:
     > ls -1
     test.fastq
     test.fastq.index
-    > fastq_index_cat n 3 test.fastq | lastal Q1 hg38.fa - > result.maf
+    > fastq_index_cat -n 3 test.fastq | lastal -Q1 hg38.fa - > result.maf
 
 
 This software is a set of following tools:
