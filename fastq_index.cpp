@@ -29,22 +29,36 @@
 #define DEBUG(x)
 #endif /* DEBUG_BUILD */
 
-#define DEFAULT_STEP 1000000
-#define BLOCK_SIZE 4096
+#define DEFAULT_STEP		1000000
+#define BLOCK_SIZE			4096
+#define LINE_BUFFER_SIZE	10240
 
 
-int estimate_seq_len (FILE *fp, size_t *head_len, size_t *seq_len)
+int count_lines (FILE *fp)
+{
+	rewind (fp);
+	char buff[LINE_BUFFER_SIZE];
+	int lines = 0;
+	for ( ; fgets(buff, LINE_BUFFER_SIZE, fp) != NULL && buff[0]!='\0'; ++lines);
+	rewind (fp);
+	return lines;
+}
+
+int estimate_seq_len (FILE *fp, size_t *head1_len, size_t *seq_len, size_t *head2_len, size_t *qual_len)
 {
 	rewind (fp);
 	int c=0;
-	for (c=fgetc (fp); !feof (fp) & c!='\n'; c=fgetc (fp), ++(*head_len));
+	for (c=fgetc (fp); !feof (fp) & c!='\n'; c=fgetc (fp), ++(*head1_len));
 	for (c=fgetc (fp); !feof (fp) & c!='\n'; c=fgetc (fp), ++(*seq_len));
+	for (c=fgetc (fp); !feof (fp) & c!='\n'; c=fgetc (fp), ++(*head2_len));
+	for (c=fgetc (fp); !feof (fp) & c!='\n'; c=fgetc (fp), ++(*qual_len));
 	rewind (fp);
-	++(*head_len);	// counting '\n'
+	++(*head1_len);	// counting '\n'
 	++(*seq_len);	// counting '\n'
+	++(*head2_len);	// counting '\n'
+	++(*qual_len);	// counting '\n'
 	return (*seq_len);
 }
-
 
 void usage(FILE *fp)
 {
@@ -96,21 +110,27 @@ int main (int argc, char **argv)
 	struct stat file_stat;
 	stat (argv[optind], &file_stat);
 
-	size_t head_len=0;
+	size_t head1_len=0;
 	size_t seq_len=0;
+	size_t head2_len=0;
+	size_t qual_len=0;
 
-	estimate_seq_len (fp, &head_len, &seq_len);
-	DEBUG("header_length=" << head_len << " sequence_length=" << seq_len);
-
-	float estimated_lines=file_stat.st_size / (head_len + seq_len * 2 + 2);
+	float estimated_lines=0;
+	if (file_stat.st_size < 1048576)
+		estimated_lines = count_lines (fp);
+	else {
+		estimate_seq_len (fp, &head1_len, &seq_len, &head2_len, &qual_len);
+		DEBUG("header_length(1)=" << head1_len << " sequence_length=" << seq_len << " header_length(2)=" << head2_len << " quality_length=" << qual_len);
+		estimated_lines = file_stat.st_size / (head1_len + seq_len + head2_len + qual_len);
+	}
 	DEBUG("estimated_lines=" << estimated_lines);
 
 	if (estimated_lines < step_lines) {
-		fprintf (stderr, "Error: main: \"-s %s\" has too larger value than estimated number of lines (%.1f).\n", step_str, estimated_lines);
+		fprintf (stderr, "Error: main: \"-s %s\" specifies too larger value than estimated number of lines (%.1f).\n", step_str, estimated_lines);
 		return (1);
 	}
 
-	int buffer_size=(max (head_len, seq_len))*2;
+	int buffer_size=(max (head1_len, seq_len))*2;
 	char *buffer=NULL;
 	buffer=(char *)calloc (buffer_size, sizeof (char));
 	if (buffer==NULL) {
@@ -135,8 +155,7 @@ int main (int argc, char **argv)
 	outfp=fopen (index_file, "wb");
 	size_t line_no=0;
 	size_t ii=0;
-	while (!feof (fp)) {
-		fgets (buffer, buffer_size, fp);
+	for ( ; fgets (buffer, buffer_size, fp) != NULL; ) {
 		++line_no;
 		if (buffer[buffer_size-1] != 0 & buffer[buffer_size-1] != '\n') {
 			fprintf (stderr, "Error: main: the line no. %d is longer than the buffer size (%d).\n", line_no, buffer_size);
@@ -154,6 +173,7 @@ int main (int argc, char **argv)
 				memset (index, index_lines, sizeof (long int));
 			}
 		}
+		DEBUG ("line_no=" << line_no);
 	}
 	fclose (fp);
 	if (ii>0) {
