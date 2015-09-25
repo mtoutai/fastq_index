@@ -36,11 +36,12 @@ void ctconv_f(char *buf, size_t size)
 		switch(buf[i]) {
 		case 'C':
 		case 'c':
-			buf[i]='T';
-			break;
+			buf[i]='t';
+			continue;
 		default:
 			buf[i]=toupper(buf[i]);
 		}
+		DEBUG ("buf[" << i << "]=" << buf[i]);
 	}
 }
 
@@ -51,40 +52,39 @@ void ctconv_r(char *buf, size_t size)
 		switch(buf[i]) {
 		case 'G':
 		case 'g':
-			buf[i]='A';
-			break;
+			buf[i]='a';
+			continue;
 		default:
 			buf[i]=toupper(buf[i]);
 		}
+		DEBUG ("buf[" << i << "]=" << buf[i]);
 	}
 }
 
 
-void read_write(FILE *fp, char *line_buffer, long int &nline)
+void read_write(FILE *fp, char *line_buffer, size_t line_buffer_size, long int &nline)
 {
-	if (fgets(line_buffer, sizeof(line_buffer), fp)!=NULL) {
+	if (fgets(line_buffer, line_buffer_size, fp)!=NULL) {
 		fputs(line_buffer, stdout);
 		++nline;
 	}
 }
 
 
-void read_write_ctconv_f(FILE *fp, char *line_buffer, long int &nline)
+void read_write_ctconv_f(FILE *fp, char *line_buffer, size_t line_buffer_size, long int &nline)
 {
-	if (fgets(line_buffer, sizeof(line_buffer), fp)!=NULL) {
-			if (nline % 4 == 1) ctconv_f(line_buffer, LINE_BUFFER_SIZE);
+	if (fgets(line_buffer, line_buffer_size, fp)!=NULL) {
+			if (nline++ % 4 == 1) ctconv_f(line_buffer, line_buffer_size);
 		fputs(line_buffer, stdout);
-		++nline;
 	}
 }
 
 
-void read_write_ctconv_r(FILE *fp, char *line_buffer, long int &nline)
+void read_write_ctconv_r(FILE *fp, char *line_buffer, size_t line_buffer_size, long int &nline)
 {
-	if (fgets(line_buffer, sizeof(line_buffer), fp)!=NULL) {
-			if (nline % 4 == 1) ctconv_r(line_buffer, LINE_BUFFER_SIZE);
+	if (fgets(line_buffer, line_buffer_size, fp)!=NULL) {
+			if (nline++ % 4 == 1) ctconv_r(line_buffer, line_buffer_size);
 		fputs(line_buffer, stdout);
-		++nline;
 	}
 }
 
@@ -113,7 +113,7 @@ int main (int argc, char **argv)
 	char index_file[2048] = { '\0' };
 	char nth_str[16];
 	unsigned int nth=0;
-	void (*io_function)(FILE *, char*, long int&) = read_write;
+	void (*io_function)(FILE *, char*, size_t, long int&) = read_write;
 
 	while ((arg_opt=getopt(argc, argv, "bri:n:"))!=-1) {
 		switch(arg_opt) {
@@ -196,13 +196,13 @@ int main (int argc, char **argv)
 	}
 	if (nth == index_size) {
 		while (! feof(fp)) {
-			io_function(fp, line_buffer, nline);
+			io_function(fp, line_buffer, LINE_BUFFER_SIZE, nline);
 		}
 	}
 	else {
 		DEBUG("ftell(fp)=" << ftell(fp) << " index_table[" << nth << "]=" << index_table[nth]);
 		while (ftell(fp) < index_table[nth]) {
-			io_function(fp, line_buffer, nline);
+			io_function(fp, line_buffer, LINE_BUFFER_SIZE, nline);
 		}
 	}
     fclose(fp);
